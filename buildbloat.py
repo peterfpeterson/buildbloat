@@ -54,11 +54,10 @@ def ToDicts(node, name):
   """Converts a Node tree to an object tree usable by webtreemap."""
   d = {
     'name': "'%s' %s" % (name, FormatTime(node.size)),
-    'data': { '$area': node.size }
+    'data': { '$area': int(node.size*1000.) }
   }
   if node.children:
     d['children'] = [ToDicts(v, k) for k, v in node.children.items()]
-    d['data']['$dominant_symbol'] = 'node'
   return d
 
 
@@ -87,7 +86,7 @@ def main(args):
     Insert(data, output, duration)
 
   obj = ToDicts(data, 'everything')
-  print(json.dumps(obj, indent=2))
+  print('var kTree =', json.dumps(obj, indent=2))
 
 
 if __name__ == '__main__':
