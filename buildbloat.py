@@ -3,6 +3,7 @@ from __future__ import (absolute_import, print_function)
 
 import json
 import os
+import string
 import sys
 
 """Converts a ninja build log to webtreemap format.
@@ -14,6 +15,59 @@ removes old, stale buildlog entries.
 Usage:
   buildbloat.py out/Release/.ninja_log > data.json
 """
+
+HTML_TEMPLATE = '''
+<!DOCTYPE html>
+<title>webtreemap demo (Chrome binary size)</title>
+<style>
+${webtreemapcss}
+</style>
+<style>
+body {
+  font-family: sans-serif;
+  font-size: 0.8em;
+  margin: 2ex 4ex;
+}
+
+h1 {
+  font-weight: normal;
+}
+
+#map {
+  width: screen.width;
+  height: 1000px;
+
+  position: relative;
+  cursor: pointer;
+  -webkit-user-select: none;
+}
+</style>
+
+<h1>webtreemap demo</h1>
+
+<p>This is a simple demonstration of
+<a href="http://github.com/martine/webtreemap">webtreemap</a>.  It's showing
+the relative size of parts of a binary of Chromium.  (It's missing some data --
+the total binary size is over the 22mb displayed.)</p>
+
+<p>Click on a box to zoom in.  Click on the outermost box to zoom out.</p>
+
+<div id='map'></div>
+
+<script type="text/javascript">
+${ninjalogtree}
+</script>
+
+<script type="text/javascript">
+${webtreemapjs}
+</script>
+
+<script type="text/javascript">
+var map = document.getElementById('map');
+appendTreemap(map, kTree);
+</script>
+
+'''
 
 class Node(object):
   def __init__(self, size):
@@ -60,8 +114,18 @@ def ToDicts(node, name):
     d['children'] = [ToDicts(v, k) for k, v in node.children.items()]
   return d
 
+def load(filename):
+  with open(filename, 'r') as handle:
+    stuff = handle.read()
+  return stuff
 
-def main(args):
+def loadCSS():
+  return load('webtreemap/webtreemap.css')
+
+def loadJavaScript():
+  return load('webtreemap/webtreemap.js')
+
+def ToJson(args):
   data = Node(size=0)
   times = set()
   did_policy = False
@@ -86,8 +150,16 @@ def main(args):
     Insert(data, output, duration)
 
   obj = ToDicts(data, 'everything')
-  print('var kTree =', json.dumps(obj, indent=2))
+  return json.dumps(obj, indent=2)
 
 
 if __name__ == '__main__':
-  main(sys.argv[1:])
+  data = 'var kTree = ' + ToJson(sys.argv[1:])
+
+  template = string.Template(HTML_TEMPLATE)
+
+  html_text = template.substitute(webtreemapcss=loadCSS(),
+                                  webtreemapjs=loadJavaScript(),
+                                  ninjalogtree = data,
+  )
+  print(html_text)
