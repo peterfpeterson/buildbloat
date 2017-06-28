@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import (absolute_import, print_function)
+
 import json
 import os
 import sys
@@ -12,7 +14,6 @@ removes old, stale buildlog entries.
 Usage:
   buildbloat.py out/Release/.ninja_log > data.json
 """
-
 
 class Node(object):
   def __init__(self, size):
@@ -56,7 +57,7 @@ def ToDicts(node, name):
     'data': { '$area': node.size }
   }
   if node.children:
-    d['children'] = [ToDicts(v, k) for k, v in node.children.iteritems()]
+    d['children'] = [ToDicts(v, k) for k, v in node.children.items()]
     d['data']['$dominant_symbol'] = 'node'
   return d
 
@@ -86,7 +87,7 @@ def main(args):
     Insert(data, output, duration)
 
   obj = ToDicts(data, 'everything')
-  print json.dumps(obj, indent=2)
+  print(json.dumps(obj, indent=2))
 
 
 if __name__ == '__main__':
