@@ -8,7 +8,7 @@ import sys
 
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
-<title>webtreemap demo (Chrome binary size)</title>
+<title>webtreemap demo</title>
 <style>
 ${webtreemapcss}
 </style>
@@ -36,9 +36,7 @@ h1 {
 <h1>webtreemap demo</h1>
 
 <p>This is a simple demonstration of
-<a href="http://github.com/martine/webtreemap">webtreemap</a>.  It's showing
-the relative size of parts of a binary of Chromium.  (It's missing some data --
-the total binary size is over the 22mb displayed.)</p>
+<a href="http://github.com/emvar/webtreemap">webtreemap</a>.</p>
 
 <p>Click on a box to zoom in.  Click on the outermost box to zoom out.</p>
 
