@@ -6,16 +6,6 @@ import os
 import string
 import sys
 
-"""Converts a ninja build log to webtreemap format.
-
-Run `ninja -t recompact` first ot make sure that no duplicate entries are
-in the build log, and use a ninja newer than 1.4 to make sure recompaction
-removes old, stale buildlog entries.
-
-Usage:
-  buildbloat.py out/Release/.ninja_log > data.json
-"""
-
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <title>webtreemap demo (Chrome binary size)</title>
@@ -125,11 +115,12 @@ def loadCSS():
 def loadJavaScript():
   return load('webtreemap/webtreemap.js')
 
-def ToJson(args):
+def ToJson(logfile, **kwargs):
+  '''Convert ninja build log to a json object suitable for webtreemap'''
   data = Node(size=0)
   times = set()
   did_policy = False
-  for line in open(args[0], 'r').readlines()[1:]:
+  for line in logfile.readlines()[1:]:
     start, finish, _, output, _ = line.split('\t')
     duration = (int(finish) - int(start)) / 1000.0
 
@@ -150,16 +141,31 @@ def ToJson(args):
     Insert(data, output, duration)
 
   obj = ToDicts(data, 'everything')
-  return json.dumps(obj, indent=2)
-
+  return json.dumps(obj, **kwargs)
 
 if __name__ == '__main__':
-  data = 'var kTree = ' + ToJson(sys.argv[1:])
+  import argparse
+  parser = argparse.ArgumentParser('Converts a ninja build log to webtreemap based html report')
+  parser.add_argument('logfile', metavar='ninjalogfile', type=argparse.FileType('r'),
+                      help='Run `ninja -t recompact` first to make sure that no duplicate entries are in the build log')
+  parser.add_argument('-o', '--output', dest='reportfile', default='report.html', type=argparse.FileType('w'), help='default=report.html')
+  parser.add_argument('--pretty-json', dest='prettyjson', action='store_true',
+                      help='pretty printed json in report')
+  args = parser.parse_args()
 
+  # convert the ninja report to a json document
+  jsonargs = {}
+  if args.prettyjson:
+    jsonargs['indent'] = 2
+  data = 'var kTree = ' + ToJson(args.logfile, **jsonargs)
+
+  # put together the output text
   template = string.Template(HTML_TEMPLATE)
-
   html_text = template.substitute(webtreemapcss=loadCSS(),
                                   webtreemapjs=loadJavaScript(),
                                   ninjalogtree = data,
   )
-  print(html_text)
+
+  # write out the result
+  args.reportfile.write(html_text)
+  print('wrote results to "%s"' % args.reportfile.name)
