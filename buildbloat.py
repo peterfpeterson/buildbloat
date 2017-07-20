@@ -147,15 +147,23 @@ if __name__ == '__main__':
   parser.add_argument('logfile', metavar='ninjalogfile', type=argparse.FileType('r'),
                       help='Run `ninja -t recompact` first to make sure that no duplicate entries are in the build log')
   parser.add_argument('-o', '--output', dest='reportfile', default='report.html', type=argparse.FileType('w'), help='default=report.html')
-  parser.add_argument('--pretty-json', dest='prettyjson', action='store_true',
+  parser.add_argument('--compact-json', dest='prettyjson', action='store_false',
                       help='pretty printed json in report')
+  parser.add_argument('--json', dest='jsononly', action='store_true',
+                      help='write json document to output file')
+
   args = parser.parse_args()
 
   # convert the ninja report to a json document
   jsonargs = {}
   if args.prettyjson:
     jsonargs['indent'] = 2
-  data = 'var kTree = ' + ToJson(args.logfile, **jsonargs)
+  data = ToJson(args.logfile, **jsonargs)
+  if args.jsononly:
+    args.reportfile.write(data)
+    print('wrote results to "%s"' % args.reportfile.name)
+    sys.exit(0)
+  data = 'var kTree = ' + data
 
   # put together the output text
   template = string.Template(HTML_TEMPLATE)
